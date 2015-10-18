@@ -16,8 +16,12 @@
 
 
 from snippets.models import Snippet
-from snippets.serializers import SnippetSerializer
+from profiles.models import CustomUser
+from snippets.serializers import SnippetSerializer, UserSerializer
+from snippets.permissions import IsOwnerOrReadOnly
+
 from rest_framework import generics
+from rest_framework import permissions
 
 
 #request.POST  # Only handles form data.  Only works for 'POST' method.
@@ -202,10 +206,32 @@ from rest_framework import generics
 
 
 class SnippetList(generics.ListCreateAPIView):
+    """Snippet List View
+    """
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
+
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
+    """Snippet Detail View
+    """
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                      IsOwnerOrReadOnly,)
+
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
+
+
+class UserList(generics.ListAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
+
+
+class UserDetail(generics.RetrieveAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
